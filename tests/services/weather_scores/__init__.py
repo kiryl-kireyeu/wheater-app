@@ -1,0 +1,1 @@
+"""Weather scores service tests."""

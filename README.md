@@ -2,7 +2,7 @@
 
 FastAPI application for a recruitment task. The app will fetch hourly weather data from Open-Meteo, calculate weather scores for selected cities, and return a ranked list from best to worst weather conditions.
 
-Current implementation includes the project skeleton, FastAPI app setup, Swagger/OpenAPI metadata, and a health check endpoint.
+Current implementation includes the FastAPI app setup, Swagger/OpenAPI metadata, health check endpoint, and the public city weather scores API.
 
 ## Requirements
 
@@ -109,9 +109,9 @@ If hooks are not active locally, enable them with:
 git config core.hooksPath .githooks
 ```
 
-## Planned Main Endpoint
+## Main Endpoint
 
-The main task endpoint will be:
+Get ranked city weather scores:
 
 ```text
 GET /api/v1/cities-scores?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
@@ -119,4 +119,12 @@ GET /api/v1/cities-scores?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
 
 Both query parameters are optional. If omitted, the app will use yesterday as the default date range.
 
-The endpoint will return a sorted list of cities with aggregated weather data and calculated scores.
+Example:
+
+```bash
+curl "http://127.0.0.1:8000/api/v1/cities-scores?start_date=2026-06-01&end_date=2026-06-01"
+```
+
+The endpoint returns a sorted list of cities with aggregated weather data and calculated scores.
+
+Dates must point to historical data. `end_date` cannot be later than yesterday.

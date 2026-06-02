@@ -13,7 +13,7 @@ from app.services.open_meteo.payload import (
 )
 from app.services.open_meteo.schemas import HourlyWeatherData
 
-OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+OPEN_METEO_HISTORICAL_FORECAST_URL = "https://historical-forecast-api.open-meteo.com/v1/forecast"
 
 
 class OpenMeteoClient:
@@ -22,7 +22,7 @@ class OpenMeteoClient:
     def __init__(
         self,
         http_client: httpx.AsyncClient,
-        base_url: str = OPEN_METEO_ARCHIVE_URL,
+        base_url: str = OPEN_METEO_HISTORICAL_FORECAST_URL,
     ) -> None:
         self._http_client = http_client
         self._base_url = base_url

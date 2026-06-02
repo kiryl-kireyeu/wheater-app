@@ -72,9 +72,30 @@ def test_fetch_hourly_weather_raises_for_invalid_json() -> None:
         _fetch_with_handler(lambda _: httpx.Response(200, content=b"not-json"))
 
 
+def test_fetch_hourly_weather_raises_for_non_object_json() -> None:
+    with pytest.raises(OpenMeteoError, match="invalid JSON object"):
+        _fetch_with_handler(lambda _: httpx.Response(200, json=[]))
+
+
 def test_fetch_hourly_weather_raises_when_hourly_data_is_missing() -> None:
     with pytest.raises(OpenMeteoError, match="hourly data"):
         _fetch_with_handler(lambda _: httpx.Response(200, json={}))
+
+
+@pytest.mark.parametrize(
+    "time_value",
+    [
+        [],
+        [1],
+        "2026-06-01T00:00",
+    ],
+)
+def test_fetch_hourly_weather_raises_when_timestamps_are_invalid(time_value: object) -> None:
+    payload = _open_meteo_payload()
+    payload["hourly"]["time"] = time_value
+
+    with pytest.raises(OpenMeteoError, match="timestamps"):
+        _fetch_with_handler(lambda _: httpx.Response(200, json=payload))
 
 
 def test_fetch_hourly_weather_raises_when_required_metric_is_missing() -> None:
@@ -90,6 +111,30 @@ def test_fetch_hourly_weather_raises_when_metric_values_are_not_numeric() -> Non
     payload["hourly"]["wind_speed_10m"] = ["bad-value"]
 
     with pytest.raises(OpenMeteoError, match="wind_speed_10m"):
+        _fetch_with_handler(lambda _: httpx.Response(200, json=payload))
+
+
+def test_fetch_hourly_weather_raises_when_metric_values_are_boolean() -> None:
+    payload = _open_meteo_payload()
+    payload["hourly"]["wind_speed_10m"] = [True]
+
+    with pytest.raises(OpenMeteoError, match="wind_speed_10m"):
+        _fetch_with_handler(lambda _: httpx.Response(200, json=payload))
+
+
+def test_fetch_hourly_weather_raises_when_metric_values_are_empty() -> None:
+    payload = _open_meteo_payload()
+    payload["hourly"]["temperature_2m"] = []
+
+    with pytest.raises(OpenMeteoError, match="temperature_2m"):
+        _fetch_with_handler(lambda _: httpx.Response(200, json=payload))
+
+
+def test_fetch_hourly_weather_raises_when_metric_values_are_all_null() -> None:
+    payload = _open_meteo_payload()
+    payload["hourly"]["temperature_2m"] = [None, None]
+
+    with pytest.raises(OpenMeteoError, match="temperature_2m"):
         _fetch_with_handler(lambda _: httpx.Response(200, json=payload))
 
 

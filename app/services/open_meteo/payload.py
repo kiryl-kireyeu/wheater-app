@@ -60,7 +60,7 @@ def _extract_numeric_series(hourly: dict[str, Any], key: str, city: City) -> lis
         if value is None:
             continue
 
-        if not isinstance(value, int | float):
+        if isinstance(value, bool) or not isinstance(value, int | float):
             msg = f"Open-Meteo response for {city.name} contains invalid {key} values."
             raise OpenMeteoError(msg)
 

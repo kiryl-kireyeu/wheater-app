@@ -3,6 +3,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class City:
+    """Represents a configured city and its Open-Meteo coordinates."""
+
     name: str
     country: str
     latitude: float

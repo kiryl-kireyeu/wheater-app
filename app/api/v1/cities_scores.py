@@ -4,16 +4,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.dependencies import get_weather_scores_service
+from app.api.v1.cities_scores_presenter import to_cities_scores_response
 from app.core.date_range import resolve_date_range
-from app.schemas.weather import (
-    CitiesScoresResponse,
-    CityWeatherScoreResponse,
-    CoordinatesResponse,
-    WeatherAveragesResponse,
-    WeatherScoresResponse,
-)
+from app.schemas.weather import CitiesScoresResponse
 from app.services.open_meteo import OpenMeteoError
-from app.services.weather_scores import CitiesScores, WeatherScoresService
+from app.services.weather_scores import WeatherScoresService
 
 router = APIRouter(prefix="/api/v1", tags=["weather scores"])
 
@@ -50,27 +45,4 @@ async def get_cities_scores(
             detail=str(exc),
         ) from exc
 
-    return _to_response(scores=scores)
-
-
-def _to_response(scores: CitiesScores) -> CitiesScoresResponse:
-    """Map domain service results to the public API response schema."""
-    # Keep this mapping at the API boundary so domain dataclasses stay framework-agnostic.
-    return CitiesScoresResponse(
-        start_date=scores.start_date,
-        end_date=scores.end_date,
-        cities=[
-            CityWeatherScoreResponse(
-                rank=city_score.rank,
-                city=city_score.city.name,
-                country=city_score.city.country,
-                coordinates=CoordinatesResponse(
-                    latitude=city_score.city.latitude,
-                    longitude=city_score.city.longitude,
-                ),
-                averages=WeatherAveragesResponse.model_validate(city_score.averages),
-                scores=WeatherScoresResponse.model_validate(city_score.scores),
-            )
-            for city_score in scores.cities
-        ],
-    )
+    return to_cities_scores_response(scores=scores)

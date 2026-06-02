@@ -8,6 +8,7 @@ getDataButton.addEventListener("click", () => {
   void fetchScores();
 });
 
+/** Fetch ranked scores from the API and update the table state. */
 async function fetchScores() {
   setLoadingState();
 
@@ -25,6 +26,7 @@ async function fetchScores() {
   }
 }
 
+/** Build the API URL from optional date inputs. */
 function buildScoresUrl() {
   const params = new URLSearchParams();
 
@@ -36,18 +38,21 @@ function buildScoresUrl() {
   return query ? `/api/v1/cities-scores?${query}` : "/api/v1/cities-scores";
 }
 
+/** Append a date query parameter only when the user provided a value. */
 function appendDateParam(params, name, value) {
   if (value) {
     params.set(name, value);
   }
 }
 
+/** Disable the form and show a temporary loading table row. */
 function setLoadingState() {
   getDataButton.disabled = true;
   statusMessage.textContent = "Loading weather scores...";
   tableBody.innerHTML = '<tr><td colspan="8" class="empty-state">Loading...</td></tr>';
 }
 
+/** Render a successful API response into the weather scores table. */
 function renderScores(payload) {
   getDataButton.disabled = false;
   statusMessage.textContent = `Showing scores for ${payload.start_date} to ${payload.end_date}.`;
@@ -60,6 +65,7 @@ function renderScores(payload) {
   tableBody.innerHTML = payload.cities.map(renderScoreRow).join("");
 }
 
+/** Render one city score row. */
 function renderScoreRow(city) {
   return `
     <tr>
@@ -75,6 +81,7 @@ function renderScoreRow(city) {
   `;
 }
 
+/** Render a user-facing error state without clearing the page shell. */
 function renderError(error) {
   getDataButton.disabled = false;
   statusMessage.textContent = error.message;
@@ -82,10 +89,12 @@ function renderError(error) {
     '<tr><td colspan="8" class="empty-state">Weather scores could not be loaded.</td></tr>';
 }
 
+/** Format numeric API values consistently for table display. */
 function formatNumber(value) {
   return Number(value).toFixed(2);
 }
 
+/** Escape API-provided strings before inserting table HTML. */
 function escapeHtml(value) {
   const element = document.createElement("span");
   element.textContent = value;

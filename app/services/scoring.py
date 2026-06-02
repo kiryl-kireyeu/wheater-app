@@ -15,6 +15,8 @@ CLOUD_COVER_WEIGHT = 0.25
 
 @dataclass(frozen=True, slots=True)
 class WeatherScores:
+    """Stores component weather scores and the weighted total score."""
+
     temperature: float
     wind: float
     humidity: float

@@ -22,10 +22,23 @@ def test_temperature_score_cannot_go_below_zero() -> None:
     assert calculate_temperature_score(40) == 0
 
 
+@pytest.mark.parametrize("temperature", [14, 34])
+def test_temperature_score_is_zero_at_ten_degree_deviation(temperature: float) -> None:
+    assert calculate_temperature_score(temperature) == 0
+
+
 def test_wind_score_is_best_at_zero_and_decreases_with_speed() -> None:
     assert calculate_wind_score(0) == 10
     assert calculate_wind_score(3.25) == 6.75
     assert calculate_wind_score(15) == 0
+
+
+def test_wind_score_is_zero_at_ten_meters_per_second() -> None:
+    assert calculate_wind_score(10) == 0
+
+
+def test_wind_score_cannot_exceed_maximum_for_negative_input() -> None:
+    assert calculate_wind_score(-2) == 10
 
 
 @pytest.mark.parametrize(
@@ -45,6 +58,11 @@ def test_humidity_score_uses_50_percent_as_target(
     assert calculate_humidity_score(humidity) == expected_score
 
 
+@pytest.mark.parametrize("humidity", [-10, 110])
+def test_humidity_score_cannot_go_below_zero_for_out_of_range_values(humidity: float) -> None:
+    assert calculate_humidity_score(humidity) == 0
+
+
 @pytest.mark.parametrize(
     ("cloud_cover", "expected_score"),
     [
@@ -60,6 +78,11 @@ def test_cloud_score_uses_25_percent_as_target(
     expected_score: float,
 ) -> None:
     assert calculate_cloud_score(cloud_cover) == expected_score
+
+
+@pytest.mark.parametrize("cloud_cover", [-10, 125])
+def test_cloud_score_cannot_go_below_zero_for_out_of_range_values(cloud_cover: float) -> None:
+    assert calculate_cloud_score(cloud_cover) == 0
 
 
 def test_weather_scores_use_required_weights() -> None:

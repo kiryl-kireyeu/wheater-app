@@ -16,9 +16,17 @@ HOURLY_VARIABLES = (
 
 def build_weather_params(city: City, date_range: DateRange) -> dict[str, str | float]:
     """Build Open-Meteo query parameters with explicit units and hourly metrics."""
+    return build_weather_params_for_cities(cities=(city,), date_range=date_range)
+
+
+def build_weather_params_for_cities(
+    cities: tuple[City, ...],
+    date_range: DateRange,
+) -> dict[str, str | float]:
+    """Build Open-Meteo query parameters for one batch request across cities."""
     return {
-        "latitude": city.latitude,
-        "longitude": city.longitude,
+        "latitude": ",".join(str(city.latitude) for city in cities),
+        "longitude": ",".join(str(city.longitude) for city in cities),
         "start_date": _format_date(date_range.start_date),
         "end_date": _format_date(date_range.end_date),
         "hourly": ",".join(HOURLY_VARIABLES),
@@ -51,6 +59,31 @@ def parse_hourly_weather(payload: dict[str, Any], city: City) -> HourlyWeatherDa
         ),
         cloud_cover=_extract_numeric_series(hourly, "cloud_cover", city, len(times)),
     )
+
+
+def parse_hourly_weather_list(
+    payload: dict[str, Any] | list[Any], cities: tuple[City, ...]
+) -> list[HourlyWeatherData]:
+    """Parse Open-Meteo batch response preserving the configured city order."""
+    if len(cities) == 1 and isinstance(payload, dict):
+        return [parse_hourly_weather(payload=payload, city=cities[0])]
+
+    if not isinstance(payload, list):
+        msg = "Open-Meteo batch response is not a list."
+        raise OpenMeteoError(msg)
+
+    if len(payload) != len(cities):
+        msg = "Open-Meteo batch response length does not match requested cities."
+        raise OpenMeteoError(msg)
+
+    parsed_results: list[HourlyWeatherData] = []
+    for city, city_payload in zip(cities, payload, strict=True):
+        if not isinstance(city_payload, dict):
+            msg = f"Open-Meteo batch response for {city.name} is not an object."
+            raise OpenMeteoError(msg)
+        parsed_results.append(parse_hourly_weather(payload=city_payload, city=city))
+
+    return parsed_results
 
 
 def _extract_numeric_series(

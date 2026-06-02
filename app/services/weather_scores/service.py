@@ -1,5 +1,3 @@
-import asyncio
-
 from app.core.cities import CITIES, City
 from app.core.date_range import DateRange
 from app.services.open_meteo import OpenMeteoClient
@@ -25,12 +23,11 @@ class WeatherScoresService:
         """Fetch weather data and return ranked city scores for a date range."""
         validate_historical_range(date_range=date_range)
 
-        # Each city fetch is independent, so concurrent calls keep the endpoint responsive.
-        hourly_results = await asyncio.gather(
-            *(
-                self._weather_client.fetch_hourly_weather(city=city, date_range=date_range)
-                for city in self._cities
-            )
+        # Open-Meteo supports comma-separated coordinates, so one batch request avoids
+        # unnecessary API calls and lowers the risk of rate limiting.
+        hourly_results = await self._weather_client.fetch_hourly_weather_for_cities(
+            cities=self._cities,
+            date_range=date_range,
         )
 
         city_scores = [

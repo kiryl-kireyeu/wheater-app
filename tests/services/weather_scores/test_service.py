@@ -70,7 +70,7 @@ def test_weather_scores_service_propagates_open_meteo_errors() -> None:
         asyncio.run(service.get_cities_scores(_yesterday_range()))
 
 
-def test_weather_scores_service_fetches_each_configured_city() -> None:
+def test_weather_scores_service_fetches_configured_cities_in_one_batch() -> None:
     weather_by_city = {
         "Warsaw": _hourly_weather(temperature=[24], wind=[0], humidity=[50], cloud=[25]),
         "Gdansk": _hourly_weather(temperature=[24], wind=[0], humidity=[50], cloud=[25]),
@@ -80,21 +80,28 @@ def test_weather_scores_service_fetches_each_configured_city() -> None:
 
     asyncio.run(service.get_cities_scores(_yesterday_range()))
 
-    assert fake_client.requested_city_names == ["Warsaw", "Gdansk"]
+    assert fake_client.requested_city_batches == [["Warsaw", "Gdansk"]]
 
 
 class FakeWeatherClient:
     def __init__(self, weather_by_city: dict[str, HourlyWeatherData]) -> None:
         self._weather_by_city = weather_by_city
-        self.requested_city_names: list[str] = []
+        self.requested_city_batches: list[list[str]] = []
 
     async def fetch_hourly_weather(
         self,
         city: City,
         date_range: DateRange,
     ) -> HourlyWeatherData:
-        self.requested_city_names.append(city.name)
         return self._weather_by_city[city.name]
+
+    async def fetch_hourly_weather_for_cities(
+        self,
+        cities: tuple[City, ...],
+        date_range: DateRange,
+    ) -> list[HourlyWeatherData]:
+        self.requested_city_batches.append([city.name for city in cities])
+        return [self._weather_by_city[city.name] for city in cities]
 
 
 class FailingWeatherClient:
@@ -103,6 +110,13 @@ class FailingWeatherClient:
         city: City,
         date_range: DateRange,
     ) -> HourlyWeatherData:
+        raise OpenMeteoError("Open-Meteo request failed.")
+
+    async def fetch_hourly_weather_for_cities(
+        self,
+        cities: tuple[City, ...],
+        date_range: DateRange,
+    ) -> list[HourlyWeatherData]:
         raise OpenMeteoError("Open-Meteo request failed.")
 
 

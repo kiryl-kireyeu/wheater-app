@@ -4,9 +4,24 @@ const getDataButton = document.querySelector("#get-data");
 const statusMessage = document.querySelector("#status-message");
 const tableBody = document.querySelector("#scores-table-body");
 
+document.addEventListener("DOMContentLoaded", () => {
+  initializeDefaultDateRange();
+  void fetchScores();
+});
+
 getDataButton.addEventListener("click", () => {
   void fetchScores();
 });
+
+/** Initialize date inputs with the API default date range: yesterday. */
+function initializeDefaultDateRange() {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const defaultDate = formatDateInputValue(yesterday);
+  startDateInput.value = defaultDate;
+  endDateInput.value = defaultDate;
+}
 
 /** Fetch ranked scores from the API and update the table state. */
 async function fetchScores() {
@@ -43,6 +58,15 @@ function appendDateParam(params, name, value) {
   if (value) {
     params.set(name, value);
   }
+}
+
+/** Format a Date object as the YYYY-MM-DD value expected by date inputs and the API. */
+function formatDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 /** Disable the form and show a temporary loading table row. */

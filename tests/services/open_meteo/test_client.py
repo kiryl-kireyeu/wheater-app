@@ -34,6 +34,33 @@ def test_fetch_hourly_weather_builds_expected_request_params() -> None:
     assert weather_data.temperature_2m == [24.0, 25.0]
 
 
+def test_fetch_hourly_weather_for_cities_builds_batch_request_params() -> None:
+    captured_request: httpx.Request | None = None
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal captured_request
+        captured_request = request
+        return httpx.Response(
+            200,
+            json=[_open_meteo_payload(), _open_meteo_payload()],
+        )
+
+    weather_data = _fetch_batch_with_handler(handler, cities=CITIES[:2])
+
+    assert captured_request is not None
+    assert captured_request.url.params["latitude"] == f"{CITIES[0].latitude},{CITIES[1].latitude}"
+    assert captured_request.url.params["longitude"] == (
+        f"{CITIES[0].longitude},{CITIES[1].longitude}"
+    )
+    assert len(weather_data) == 2
+    assert weather_data[0].temperature_2m == [24.0, 25.0]
+
+
+def test_fetch_hourly_weather_for_cities_raises_when_batch_response_length_mismatches() -> None:
+    with pytest.raises(OpenMeteoError, match="length"):
+        _fetch_batch_with_handler(lambda _: httpx.Response(200, json=[_open_meteo_payload()]))
+
+
 def test_fetch_hourly_weather_parses_required_hourly_data() -> None:
     weather_data = _fetch_with_handler(lambda _: httpx.Response(200, json=_open_meteo_payload()))
 
@@ -156,6 +183,23 @@ def _fetch_with_handler(
         async with httpx.AsyncClient(transport=transport) as http_client:
             return await OpenMeteoClient(http_client=http_client).fetch_hourly_weather(
                 city=CITIES[0],
+                date_range=date_range,
+            )
+
+    return asyncio.run(run())
+
+
+def _fetch_batch_with_handler(
+    handler: Callable[[httpx.Request], httpx.Response | Awaitable[httpx.Response]],
+    cities: tuple = CITIES[:2],
+) -> list:
+    transport = httpx.MockTransport(handler)
+    date_range = DateRange(start_date=date(2026, 6, 1), end_date=date(2026, 6, 1))
+
+    async def run() -> list:
+        async with httpx.AsyncClient(transport=transport) as http_client:
+            return await OpenMeteoClient(http_client=http_client).fetch_hourly_weather_for_cities(
+                cities=cities,
                 date_range=date_range,
             )
 

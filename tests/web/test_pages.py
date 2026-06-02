@@ -26,5 +26,7 @@ def test_static_assets_are_served() -> None:
 
     assert script_response.status_code == 200
     assert "fetchScores" in script_response.text
+    assert "initializeDefaultDateRange" in script_response.text
+    assert "DOMContentLoaded" in script_response.text
     assert styles_response.status_code == 200
     assert ".controls" in styles_response.text

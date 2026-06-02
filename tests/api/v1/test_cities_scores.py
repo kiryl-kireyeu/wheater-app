@@ -61,6 +61,40 @@ def test_cities_scores_endpoint_defaults_to_yesterday() -> None:
     assert response.json()["end_date"] == yesterday.isoformat()
 
 
+@pytest.mark.parametrize(
+    ("query", "expected_date"),
+    [
+        ("start_date=2026-06-01", date(2026, 6, 1)),
+        ("end_date=2026-06-01", date(2026, 6, 1)),
+    ],
+)
+def test_cities_scores_endpoint_treats_single_date_as_one_day_range(
+    query: str,
+    expected_date: date,
+) -> None:
+    fake_service = FakeWeatherScoresService(
+        result=CitiesScores(
+            start_date=expected_date,
+            end_date=expected_date,
+            cities=[],
+        )
+    )
+
+    response = _client_with_service(fake_service).get(f"/api/v1/cities-scores?{query}")
+
+    assert response.status_code == 200
+    assert fake_service.last_date_range == DateRange(
+        start_date=expected_date,
+        end_date=expected_date,
+    )
+
+
+def test_cities_scores_endpoint_rejects_invalid_date_format() -> None:
+    response = TestClient(app).get("/api/v1/cities-scores?start_date=not-a-date")
+
+    assert response.status_code == 422
+
+
 def test_cities_scores_endpoint_rejects_start_date_after_end_date() -> None:
     fake_service = FakeWeatherScoresService(
         result=CitiesScores(start_date=date(2026, 6, 1), end_date=date(2026, 6, 1), cities=[])
@@ -72,6 +106,15 @@ def test_cities_scores_endpoint_rejects_start_date_after_end_date() -> None:
 
     assert response.status_code == 422
     assert "start_date" in response.json()["detail"]
+
+
+def test_cities_scores_endpoint_maps_service_validation_errors_to_422() -> None:
+    response = _client_with_service(ValidationErrorWeatherScoresService()).get(
+        "/api/v1/cities-scores?start_date=2026-06-01"
+    )
+
+    assert response.status_code == 422
+    assert "end_date" in response.json()["detail"]
 
 
 def test_cities_scores_endpoint_maps_weather_errors_to_bad_gateway() -> None:
@@ -106,6 +149,11 @@ class FakeWeatherScoresService:
 class FailingWeatherScoresService:
     async def get_cities_scores(self, date_range: DateRange) -> CitiesScores:
         raise OpenMeteoError("Open-Meteo request failed.")
+
+
+class ValidationErrorWeatherScoresService:
+    async def get_cities_scores(self, date_range: DateRange) -> CitiesScores:
+        raise ValueError("end_date must not be later than yesterday.")
 
 
 def _client_with_service(service: object) -> TestClient:

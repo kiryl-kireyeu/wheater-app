@@ -41,18 +41,32 @@ def parse_hourly_weather(payload: dict[str, Any], city: City) -> HourlyWeatherDa
 
     return HourlyWeatherData(
         time=times,
-        temperature_2m=_extract_numeric_series(hourly, "temperature_2m", city),
-        wind_speed_10m=_extract_numeric_series(hourly, "wind_speed_10m", city),
-        relative_humidity_2m=_extract_numeric_series(hourly, "relative_humidity_2m", city),
-        cloud_cover=_extract_numeric_series(hourly, "cloud_cover", city),
+        temperature_2m=_extract_numeric_series(hourly, "temperature_2m", city, len(times)),
+        wind_speed_10m=_extract_numeric_series(hourly, "wind_speed_10m", city, len(times)),
+        relative_humidity_2m=_extract_numeric_series(
+            hourly,
+            "relative_humidity_2m",
+            city,
+            len(times),
+        ),
+        cloud_cover=_extract_numeric_series(hourly, "cloud_cover", city, len(times)),
     )
 
 
-def _extract_numeric_series(hourly: dict[str, Any], key: str, city: City) -> list[float]:
+def _extract_numeric_series(
+    hourly: dict[str, Any],
+    key: str,
+    city: City,
+    expected_length: int,
+) -> list[float]:
     """Extract one non-empty numeric hourly series from an Open-Meteo response."""
     values = hourly.get(key)
     if not isinstance(values, list):
         msg = f"Open-Meteo response for {city.name} is missing {key}."
+        raise OpenMeteoError(msg)
+
+    if len(values) != expected_length:
+        msg = f"Open-Meteo response for {city.name} contains mismatched {key} length."
         raise OpenMeteoError(msg)
 
     numeric_values: list[float] = []

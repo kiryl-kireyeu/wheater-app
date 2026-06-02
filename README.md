@@ -94,6 +94,19 @@ Run lint checks with auto-fix:
 ruff check . --fix
 ```
 
+## Frontend Performance Notes
+
+The UI intentionally uses small vanilla JavaScript and server-served static assets instead of a frontend bundle.
+
+Current choices:
+
+- The script is loaded with `defer`, so it does not block initial HTML rendering.
+- JavaScript has no external dependencies.
+- CSS and JavaScript are intentionally small.
+- The UI performs API requests only after the user clicks `Get Data`.
+- Loading and error states are handled in the browser.
+- HTTP caching headers can be added later during Docker or production hardening if needed.
+
 ## Git Hooks
 
 Git hooks are stored in `.githooks`.

@@ -130,6 +130,14 @@ def test_fetch_hourly_weather_raises_when_metric_values_are_empty() -> None:
         _fetch_with_handler(lambda _: httpx.Response(200, json=payload))
 
 
+def test_fetch_hourly_weather_raises_when_metric_length_does_not_match_time() -> None:
+    payload = _open_meteo_payload()
+    payload["hourly"]["temperature_2m"] = [24]
+
+    with pytest.raises(OpenMeteoError, match="mismatched temperature_2m length"):
+        _fetch_with_handler(lambda _: httpx.Response(200, json=payload))
+
+
 def test_fetch_hourly_weather_raises_when_metric_values_are_all_null() -> None:
     payload = _open_meteo_payload()
     payload["hourly"]["temperature_2m"] = [None, None]

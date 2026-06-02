@@ -14,6 +14,8 @@ def test_index_page_renders_minimal_ui() -> None:
     assert 'id="end-date"' in response.text
     assert 'id="get-data"' in response.text
     assert 'id="scores-table-body"' in response.text
+    assert 'href="/docs"' in response.text
+    assert '<script src="/static/app.js" defer></script>' in response.text
 
 
 def test_static_assets_are_served() -> None:
